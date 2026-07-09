@@ -45,8 +45,14 @@ class Part1(Node):
         #B = 1 - (arctan((yf-y0)/(xf-x0))
         beta = 1 - math.degree((math.atan((self.target_y - self.y_pos) / (self.target_x - self.x_pos))))     #potential /0 error
         
-        cmd.linear.x = self.linear_vel      #constant value
-        cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
+        #if robot reached target: stop
+        if abs(self.target_y - self.y_pos) <= 0 and abs(self.target_x - self.x_pos) <= 0:
+            cmd.linear.x = 0.0
+            cmd.angular.z = 0.0
+        else:
+            cmd.linear.x = self.linear_vel      #constant value
+            cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
+            
         self.pub.publish(cmd)
         
         
