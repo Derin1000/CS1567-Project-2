@@ -36,6 +36,10 @@ class Part1(Node):
         #target coordinates
         self.target_x = 0.0
         self.target_y = 0.0
+        self.target_x_list = []
+        self.target_y_list = []
+        
+        self.finished = False
         
 
     def timer_callback(self):
@@ -49,6 +53,7 @@ class Part1(Node):
         if abs(self.target_y - self.y_pos) <= 0 and abs(self.target_x - self.x_pos) <= 0:
             cmd.linear.x = 0.0
             cmd.angular.z = 0.0
+            return  #go back to loop to get new coordinates
         else:
             cmd.linear.x = self.linear_vel      #constant value
             cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
@@ -79,10 +84,21 @@ def main(args=None):
             #reset odometry before each move
             aNode.pub_reset.publish(Empty())
             
-            move = input("Enter desired coordinates (x, y): ")
-            aNode.target_x = int(move.split(" ")[0])
-            aNode.target_y = int(move.split(" ")[1])
-            rclpy.spin_once(aNode)
+           
+            while not aNode.finished:
+                move = input("Enter desired coordinates (x, y): ")
+                
+                if move == "0.0":       #finished entering all moves
+                    aNode.finished = True
+                else:
+                    #parse input and add coordinates to list 
+                    aNode.target_x_list.append(int(move.split(" ")[0]))
+                    aNode.target_y_list.append(int(move.split(" ")[1]))
+                
+            while len(aNode.max_speed_list) > 0:    #while there are more coordinates
+                aNode.target_x = aNode.target_x_list.pop(0)     #set targets to current coordinates
+                aNode.target_y = aNode.target_y_list.pop(0)
+                rclpy.spin_once(aNode)              #robot makes move, then comes back to loop to receive new target
         
     except KeyboardInterrupt:
         pass
