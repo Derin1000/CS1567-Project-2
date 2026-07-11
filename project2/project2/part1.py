@@ -25,7 +25,7 @@ class Part1(Node):
         self.timer = self.create_timer(0.1, self.timer_callback)
         
         #instance variables for velocity constants
-        self.linear_vel = 0.5
+        self.linear_vel = 0.2
         self.angular_vel = 0.5
         
         #current orientation via odometry
@@ -47,17 +47,30 @@ class Part1(Node):
         
         #calculate angle from current coordinates to target coordinates
         #B = 1 - (arctan((yf-y0)/(xf-x0))
-        beta = 1 - math.degree((math.atan((self.target_y - self.y_pos) / (self.target_x - self.x_pos))))     #potential /0 error
+        beta = abs((0 - abs(math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos))))))/90)     #potential /0 error
+        print(beta)
+        dist = math.sqrt((self.target_y - self.y_pos)**2 + (self.target_x - self.x_pos)**2)
         
         #if robot reached target: stop
-        if abs(self.target_y - self.y_pos) <= 0 and abs(self.target_x - self.x_pos) <= 0:
-            cmd.linear.x = 0.0
-            cmd.angular.z = 0.0
-            return  #go back to loop to get new coordinates
-        else:
-            cmd.linear.x = self.linear_vel      #constant value
-            cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
+        if dist <= 0.2:
+            print("arrived")
+            #cmd.linear.x = 0.0
+            #cmd.angular.z = 0.0
+            self.linear_vel = 0.0
+            self.angular_vel = 0.0
             
+            raise SystemExit  #go back to loop to get new coordinates
+        else:
+            print("driving")
+            #cmd.linear.x = self.linear_vel      #constant value
+            #cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
+            self.linear_vel = 0.1075
+            self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
+            print("dist: ", dist)
+            print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
+            
+        cmd.linear.x = self.linear_vel      #constant value
+        cmd.angular.z = self.angular_vel
         self.pub.publish(cmd)
         
         
@@ -79,10 +92,11 @@ class Part1(Node):
 def main(args=None):
     rclpy.init(args=args)
     aNode = Part1()
-    try:      
+    try:     
+        #reset odometry before each move
+        aNode.pub_reset.publish(Empty())
         while True:
-            #reset odometry before each move
-            aNode.pub_reset.publish(Empty())
+            
             
            
             while not aNode.finished:
@@ -92,13 +106,17 @@ def main(args=None):
                     aNode.finished = True
                 else:
                     #parse input and add coordinates to list 
-                    aNode.target_x_list.append(int(move.split(" ")[0]))
-                    aNode.target_y_list.append(int(move.split(" ")[1]))
+                    aNode.target_x_list.append(float(move.split(" ")[0]))
+                    aNode.target_y_list.append(float(move.split(" ")[1]))
                 
-            while len(aNode.max_speed_list) > 0:    #while there are more coordinates
+            spin_bool = len(aNode.target_x_list) > 0
+            while spin_bool:    #while there are more coordinates
                 aNode.target_x = aNode.target_x_list.pop(0)     #set targets to current coordinates
                 aNode.target_y = aNode.target_y_list.pop(0)
-                rclpy.spin_once(aNode)              #robot makes move, then comes back to loop to receive new target
+                #reset odometry before each move
+                aNode.pub_reset.publish(Empty())
+                rclpy.spin(aNode)              #robot makes move, then comes back to loop to receive new target
+                spin_bool = len(aNode.target_x_list) > 0
         
     except KeyboardInterrupt:
         pass
