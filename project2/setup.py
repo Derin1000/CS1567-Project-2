@@ -25,6 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'part1.py = project2.part1:main',
+            'part2.py = project2.part2:main',
+            'odom_recorder.py = project2.odom_recorder:main',
         ],
     },
 )
