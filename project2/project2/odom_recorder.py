@@ -44,6 +44,13 @@ class OdomRecorder(Node):
         self.x_pos_prev = 0.0
         self.y_pos_prev = 0.0
         
+        #recorded coordinates to be written to file
+        self.x_list = []
+        self.y_list = []
+        
+        #name of txt file to write to
+        self.name = ""
+        
     #start/stop recording odometry when "X" pressed on joystick
     def joystick_callback(self, msg):
         if msg.buttons[2] == 1 and self.prev_button_state == 0: 
@@ -52,15 +59,27 @@ class OdomRecorder(Node):
             time.sleep(2) #allow enough time for odom reset before recording
         
             self.record = not self.record
-            self.prev_button_state = 1
-            print(self.record)
             
-            #stand in for writing current odometry to file
-            self.x_pos = 0.0
-            self.y_pos = 0.0
-            self.x_pos_prev = 0.0
-            self.y_pos_prev = 0.0
-            print("-> ", self.x_pos, ", ", self.y_pos)
+            if self.record:     #start recording
+                self.prev_button_state = 1
+                print(self.record)
+                
+                #stand in for writing current odometry to file
+                self.x_pos = 0.0
+                self.y_pos = 0.0
+                self.x_pos_prev = 0.0
+                self.y_pos_prev = 0.0
+                print("-> ", self.x_pos, ", ", self.y_pos)
+                self.x_list.append(self.x_pos)
+                self.y_list.append(self.y_pos)
+            else:       #stop recording, set up for next recording
+                while self.x_list:
+                    with open(self.name, "a") as f:
+                        f.write(f"{self.x_list.pop(0)},{self.y_list.pop(0)}\n")
+                self.x_list = []
+                self.y_list = []
+                self.name = input("Enter file name: ")
+                
             
             
         elif msg.buttons[2] == 0:
@@ -88,6 +107,9 @@ class OdomRecorder(Node):
         if self.record and dist >= 0.1:
             #stand in for writing current odometry to file
             print("-> ", self.x_pos, ", ", self.y_pos)
+            self.x_list.append(self.x_pos)
+            self.y_list.append(self.y_pos)
+            
             self.x_pos_prev = self.x_pos
             self.y_pos_prev = self.y_pos
 
@@ -96,6 +118,7 @@ def main(args=None):
     rclpy.init(args=args)
     aNode = OdomRecorder()
     try:
+        aNode.name = input("Enter file name: ")
         rclpy.spin(aNode)
         
     except KeyboardInterrupt:
