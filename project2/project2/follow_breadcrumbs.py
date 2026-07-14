@@ -7,9 +7,9 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty
 import math
 
-class Part1(Node): 
+class FollowBreadcrumbs(Node): 
     def __init__(self):
-        super().__init__('part1')
+        super().__init__('follow_breadcrumbs')
         
         #subscriber for odometry
         self.subscription = self.create_subscription(Odometry, 'odom', self.odom_callback, 10)
@@ -46,11 +46,9 @@ class Part1(Node):
         cmd = Twist()
         
         #calculate angle from current coordinates to target coordinates
-        #B = 90 - (arctan((yf-y0)/(xf-x0))
-        beta = ((90 - (math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos)))))))
-        #USE ANGULAR POSITION in addition to position IN BETA CALCULATION
-        beta += self.angular_pos
-        print("")
+        #B = 1 - (arctan((yf-y0)/(xf-x0))
+        beta = abs((0 - abs(math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos))))))/90)     #potential /0 error
+        print(beta)
         dist = math.sqrt((self.target_y - self.y_pos)**2 + (self.target_x - self.x_pos)**2)
         
         #if robot reached target: stop
@@ -66,13 +64,10 @@ class Part1(Node):
             print("driving")
             #cmd.linear.x = self.linear_vel      #constant value
             #cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
-            self.linear_vel = 0.2
-            #self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
-            #if self.
-            self.angular_vel = 0.85 * (beta / 90)
-            print("B = ", beta)
+            self.linear_vel = 0.1075
+            self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
             print("dist: ", dist)
-            print("angular: ", self.angular_vel)
+            print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
             
         cmd.linear.x = self.linear_vel      #constant value
         cmd.angular.z = self.angular_vel
@@ -96,23 +91,27 @@ class Part1(Node):
         
 def main(args=None):
     rclpy.init(args=args)
-    aNode = Part1()
+    aNode = FollowBreadcrumbs()
     try:     
         #reset odometry before each move
         aNode.pub_reset.publish(Empty())
         while True:
+        
+            #reset targets
+            self.target_x = 0.0
+            self.target_y = 0.0
+            self.target_x_list = []
+            self.target_y_list = []
             
-            
-           
-            while not aNode.finished:
-                move = input("Enter desired coordinates (x, y): ")
-                
-                if move == "0.0":       #finished entering all moves
-                    aNode.finished = True
-                else:
-                    #parse input and add coordinates to list 
-                    aNode.target_x_list.append(float(move.split(" ")[0]))
-                    aNode.target_y_list.append(float(move.split(" ")[1]))
+            #read file and add it's coordinates to target lists
+            name = input("Enter file name: ")
+            with open(name) as f:
+                for x in f:
+                    aNode.target_x_list.append(x.split(",")[0])
+                    aNode.target_y_list.append(x.split(",")[1])
+            print(aNode.target_x_list)
+            print("---")
+            print(aNode.target_y_list)
                 
             spin_bool = len(aNode.target_x_list) > 0
             while spin_bool:    #while there are more coordinates
