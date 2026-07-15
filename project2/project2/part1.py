@@ -47,14 +47,16 @@ class Part1(Node):
         
         #calculate angle from current coordinates to target coordinates
         #B = 90 - (arctan((yf-y0)/(xf-x0))
-        beta = ((90 - (math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos)))))))
+        beta = (((math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos))))))-self.angular_pos)
         #USE ANGULAR POSITION in addition to position IN BETA CALCULATION
-        beta += self.angular_pos
-        print("")
+        
+        print("\n", self.angular_pos)
         dist = math.sqrt((self.target_y - self.y_pos)**2 + (self.target_x - self.x_pos)**2)
+        beta = (beta+180)%360 -180
+
         
         #if robot reached target: stop
-        if dist <= 0.2:
+        if dist <= 0.15:
             print("arrived")
             #cmd.linear.x = 0.0
             #cmd.angular.z = 0.0
@@ -62,6 +64,8 @@ class Part1(Node):
             self.angular_vel = 0.0
             
             raise SystemExit  #go back to loop to get new coordinates
+        elif dist <= 0.2:
+            self.angular_vel = self.angular_vel
         else:
             print("driving")
             #cmd.linear.x = self.linear_vel      #constant value
@@ -69,7 +73,7 @@ class Part1(Node):
             self.linear_vel = 0.2
             #self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
             #if self.
-            self.angular_vel = 0.85 * (beta / 90)
+            self.angular_vel = 0.55 * (beta/45)
             print("B = ", beta)
             print("dist: ", dist)
             print("angular: ", self.angular_vel)
