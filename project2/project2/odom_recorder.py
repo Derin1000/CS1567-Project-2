@@ -43,12 +43,22 @@ class OdomRecorder(Node):
         #keeping track of previously recorded coordinates to calculate distance
         self.x_pos_prev = 0.0
         self.y_pos_prev = 0.0
+
+        #intialize storge for breadcrumbs -sharon
+        self.breadcrumb_list = []
+        self.record = False
+        self.prev_button_state = 0 #this variable is needed to tell how many times the joystick button was pressed
         
     #start/stop recording odometry when "X" pressed on joystick
     def joystick_callback(self, msg):
         if msg.buttons[2] == 1 and self.prev_button_state == 0: 
-            #reset odometry before each recording
-            self.pub_reset.publish(Empty())
+
+            # idea code -sharon
+            if not self.record:
+                self.record = True
+                self.pub_reset.publish(Empty())
+                self.breadcrumb_list = [(0.0, 0.0)] #reset breadcrumb list
+                
             time.sleep(2) #allow enough time for odom reset before recording
         
             self.record = not self.record

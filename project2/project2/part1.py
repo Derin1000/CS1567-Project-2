@@ -58,6 +58,7 @@ class Part1(Node):
             #cmd.angular.z = 0.0
             self.linear_vel = 0.0
             self.angular_vel = 0.0
+            self.is_moving = False #signal that movement is complete -sharon
             
             raise SystemExit  #go back to loop to get new coordinates
         else:
@@ -68,7 +69,8 @@ class Part1(Node):
             self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
             print("dist: ", dist)
             print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
-            
+            self.is_moving = True #signal that movement is currently driving -sharon
+        
         cmd.linear.x = self.linear_vel      #constant value
         cmd.angular.z = self.angular_vel
         self.pub.publish(cmd)
@@ -96,9 +98,7 @@ def main(args=None):
         #reset odometry before each move
         aNode.pub_reset.publish(Empty())
         while True:
-            
-            
-           
+            aNode.finished = False #signal
             while not aNode.finished:
                 move = input("Enter desired coordinates (x, y): ")
                 
@@ -114,8 +114,11 @@ def main(args=None):
                 aNode.target_x = aNode.target_x_list.pop(0)     #set targets to current coordinates
                 aNode.target_y = aNode.target_y_list.pop(0)
                 #reset odometry before each move
+                aNode.is_moving = True #signal that movement is currently driving -sharon
                 aNode.pub_reset.publish(Empty())
-                rclpy.spin(aNode)              #robot makes move, then comes back to loop to receive new target
+
+                while aNode.is_moving:   #while robot is moving, keep spinning
+                    rclpy.spin(aNode)              #robot makes move, then comes back to loop to receive new target
                 spin_bool = len(aNode.target_x_list) > 0
         
     except KeyboardInterrupt:
