@@ -43,47 +43,43 @@ class OdomRecorder(Node):
         #keeping track of previously recorded coordinates to calculate distance
         self.x_pos_prev = 0.0
         self.y_pos_prev = 0.0
-
-        #intialize storge for breadcrumbs -sharon
-        self.breadcrumb_list = []
-        self.record = False
-        self.prev_button_state = 0 #this variable is needed to tell how many times the joystick button was pressed
+        
+        #recorded coordinates to be written to file
+        self.x_list = []
+        self.y_list = []
+        
+        #name of txt file to write to
+        self.name = ""
         
     #start/stop recording odometry when "X" pressed on joystick
     def joystick_callback(self, msg):
         if msg.buttons[2] == 1 and self.prev_button_state == 0: 
-
-            # idea code -sharon
-            if not self.record:
-                self.record = True
-                self.pub_reset.publish(Empty())
-                self.breadcrumb_list = [(0.0, 0.0)] #reset breadcrumb list
+            #reset odometry before each recording
+            self.pub_reset.publish(Empty())
+            time.sleep(2) #allow enough time for odom reset before recording
+        
+            self.record = not self.record
+            
+            if self.record:     #start recording
+                self.prev_button_state = 1
+                print(self.record)
+                
+                #stand in for writing current odometry to file
+                self.x_pos = 0.0
+                self.y_pos = 0.0
                 self.x_pos_prev = 0.0
                 self.y_pos_prev = 0.0
-                print("Recording started at (0.0, 0.0)")
-
-            else:
-                self.record = False
-                filename = input("Enter filename to save breadcrumb path: ") #prompt for filename
-                with open(filename, 'w') as f:
-                    for breadcrumb in self.breadcrumb_list:
-                        f.write(f"{breadcrumb[0]:.2f}, {breadcrumb[1]:.2f}\n")
-                print(f"Recording stopped. Breadcrumb path saved to {filename}")
-        
-        #elif msg.buttons[2] == 0: 
-            #self.prev_button_state == 0
-           # time.sleep(2) #allow enough time for odom reset before recording
-        
-            #self.record = not self.record
-           # self.prev_button_state = 1
-           # print(self.record)
-            
-            #stand in for writing current odometry to file
-            #self.x_pos = 0.0
-            #self.y_pos = 0.0
-            self.x_pos_prev = 0.0
-            self.y_pos_prev = 0.0
-            print("-> ", self.x_pos, ", ", self.y_pos)
+                print("-> ", self.x_pos, ", ", self.y_pos)
+                self.x_list.append(self.x_pos)
+                self.y_list.append(self.y_pos)
+            else:       #stop recording, set up for next recording
+                while self.x_list:
+                    with open(self.name, "a") as f:
+                        f.write(f"{self.x_list.pop(0):.2f},{self.y_list.pop(0):.2f}\n")
+                self.x_list = []
+                self.y_list = []
+                self.name = input("Enter file name: ")
+                
             
             
         elif msg.buttons[2] == 0:
@@ -109,9 +105,11 @@ class OdomRecorder(Node):
         
         #if recording and distance from last recorded position is at least 10cm, record current position
         if self.record and dist >= 0.1:
-            self.breadcrumb_list.append((self.x_pos, self.y_pos))
             #stand in for writing current odometry to file
             print("-> ", self.x_pos, ", ", self.y_pos)
+            self.x_list.append(self.x_pos)
+            self.y_list.append(self.y_pos)
+            
             self.x_pos_prev = self.x_pos
             self.y_pos_prev = self.y_pos
 
@@ -120,6 +118,7 @@ def main(args=None):
     rclpy.init(args=args)
     aNode = OdomRecorder()
     try:
+        aNode.name = input("Enter file name: ")
         rclpy.spin(aNode)
         
     except KeyboardInterrupt:
