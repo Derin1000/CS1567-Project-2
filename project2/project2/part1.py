@@ -77,14 +77,9 @@ class Part1(Node):
             self.angular_vel = 0.55 * (beta/45)
             print("B = ", beta)
             print("dist: ", dist)
-<<<<<<< HEAD
             print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
             self.is_moving = True #signal that movement is currently driving -sharon
         
-=======
-            print("angular: ", self.angular_vel)
-            
->>>>>>> 1b68fce20c8c88dcb27e496acd01df8f7f434cd4
         cmd.linear.x = self.linear_vel      #constant value
         cmd.angular.z = self.angular_vel
         self.pub.publish(cmd)
