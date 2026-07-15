@@ -46,28 +46,37 @@ class FollowBreadcrumbs(Node):
         cmd = Twist()
         
         #calculate angle from current coordinates to target coordinates
-        #B = 1 - (arctan((yf-y0)/(xf-x0))
-        beta = abs((0 - abs(math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos))))))/90)     #potential /0 error
-        print(beta)
+        #B = 90 - (arctan((yf-y0)/(xf-x0))
+        beta = (((math.degrees((math.atan2((self.target_y - self.y_pos), (self.target_x - self.x_pos))))))-self.angular_pos)
+        #USE ANGULAR POSITION in addition to position IN BETA CALCULATION
+        
         dist = math.sqrt((self.target_y - self.y_pos)**2 + (self.target_x - self.x_pos)**2)
+        beta = (beta+180)%360 -180
+
         
         #if robot reached target: stop
-        if dist <= 0.2:
+        if dist <= 0.05:
             print("arrived")
             #cmd.linear.x = 0.0
             #cmd.angular.z = 0.0
-            self.linear_vel = 0.0
-            self.angular_vel = 0.0
+            if len(self.target_x_list) <= 0:
+                print("DONE")
+                self.linear_vel = 0.0
+                self.angular_vel = 0.0
+            else:
+                self.target_x = self.target_x_list.pop(0)     #set targets to current coordinates
+                self.target_y = self.target_y_list.pop(0)
             
-            raise SystemExit  #go back to loop to get new coordinates
+
+        #elif dist <= 0.2:
+            #self.angular_vel = self.angular_vel
         else:
-            print("driving")
             #cmd.linear.x = self.linear_vel      #constant value
             #cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
-            self.linear_vel = 0.1075
-            self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
-            print("dist: ", dist)
-            print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
+            self.linear_vel = 0.2
+            #self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
+            #if self.
+            self.angular_vel = 0.55 * (beta/45)
             
         cmd.linear.x = self.linear_vel      #constant value
         cmd.angular.z = self.angular_vel
@@ -98,17 +107,17 @@ def main(args=None):
         while True:
         
             #reset targets
-            self.target_x = 0.0
-            self.target_y = 0.0
-            self.target_x_list = []
-            self.target_y_list = []
+            aNode.target_x = 0.0
+            aNode.target_y = 0.0
+            aNode.target_x_list = []
+            aNode.target_y_list = []
             
             #read file and add it's coordinates to target lists
             name = input("Enter file name: ")
             with open(name) as f:
                 for x in f:
-                    aNode.target_x_list.append(x.split(",")[0])
-                    aNode.target_y_list.append(x.split(",")[1])
+                    aNode.target_x_list.append(float(x.split(",")[0]))
+                    aNode.target_y_list.append(float(x.split(",")[1]))
             print(aNode.target_x_list)
             print("---")
             print(aNode.target_y_list)
