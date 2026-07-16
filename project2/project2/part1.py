@@ -56,7 +56,7 @@ class Part1(Node):
 
         
         #if robot reached target: stop
-        if dist <= 0.2:
+        if dist <= 0.1:
             print("arrived")
             #cmd.linear.x = 0.0
             #cmd.angular.z = 0.0
@@ -64,13 +64,19 @@ class Part1(Node):
             self.angular_vel = 0.0
             self.is_moving = False #signal that movement is complete -sharon
             
-            if abs(beta) >= 5:
+            if (abs(beta) < 180 and abs(beta) >= 5) or (abs(beta) >= 180 and abs(beta) <=185):
                 print("hi")
                 self.angular_vel = 0.55 * (beta/45)
-            
-            #raise SystemExit  #go back to loop to get new coordinates
-        #elif dist <= 0.2:
-            #self.angular_vel = self.angular_vel
+            else:
+                if len(self.target_x_list) <= 0:
+                    print("DONE")
+                    self.linear_vel = 0.0
+                    self.angular_vel = 0.0
+                    raise SystemExit
+                else:
+                    self.target_x = self.target_x_list.pop(0)     #set targets to current coordinates
+                    self.target_y = self.target_y_list.pop(0)
+                
         else:
             print("driving")
             #cmd.linear.x = self.linear_vel      #constant value
@@ -79,9 +85,9 @@ class Part1(Node):
             #self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
             #if self.
             self.angular_vel = 0.55 * (beta/45)
-            print("B = ", beta)
-            print("dist: ", dist)
-            print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta)
+            #print("B = ", beta)
+            #print("dist: ", dist)
+            #print("angular: ", (0.33/math.sqrt((self.target_y)**2 + (self.target_x)**2 + 0.001)) * beta)
             self.is_moving = True #signal that movement is currently driving -sharon
         
         cmd.linear.x = self.linear_vel      #constant value
