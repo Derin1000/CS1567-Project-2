@@ -25,7 +25,7 @@ class FollowBreadcrumbs(Node):
         self.timer = self.create_timer(0.1, self.timer_callback)
         
         #instance variables for velocity constants
-        self.linear_vel = 0.2
+        self.linear_vel = 0.15
         self.angular_vel = 0.5
         
         #current orientation via odometry
@@ -55,25 +55,35 @@ class FollowBreadcrumbs(Node):
 
         
         #if robot reached target: stop
-        if dist <= 0.05:
-            print("arrived")
-            #cmd.linear.x = 0.0
-            #cmd.angular.z = 0.0
-            if len(self.target_x_list) <= 0:
-                print("DONE")
+        if dist <= 0.1:
+            if (abs(beta) < 180 and abs(beta) >= 25) or (abs(beta) >= 180 and abs(beta) <=205):
+                print(beta)
+                print(dist)
                 self.linear_vel = 0.0
-                self.angular_vel = 0.0
+                self.angular_vel = 0.55 * (beta/45)
             else:
-                self.target_x = self.target_x_list.pop(0)     #set targets to current coordinates
-                self.target_y = self.target_y_list.pop(0)
+                self.angular_vel = 0.0
+                print("\n")
+                print(self.target_x_list)
+                print("---")
+                print(self.target_y_list)
+                #cmd.linear.x = 0.0
+                #cmd.angular.z = 0.0
+                if len(self.target_x_list) <= 0:
+                    print("DONE")
+                    self.linear_vel = 0.0
+                    self.angular_vel = 0.0
+                    raise SystemExit
+                else:
+                    self.target_x = self.target_x_list.pop(0)     #set targets to current coordinates
+                    self.target_y = self.target_y_list.pop(0)
             
 
-        #elif dist <= 0.2:
-            #self.angular_vel = self.angular_vel
+        
         else:
             #cmd.linear.x = self.linear_vel      #constant value
             #cmd.angular.z = self.angular_vel * beta   #kB (where k is constant and B is angle from current coordinates to target coordinates)
-            self.linear_vel = 0.2
+            self.linear_vel = 0.15
             #self.angular_vel = (0.30085/math.sqrt((self.target_y)**2 + (self.target_x)**2)) * beta
             #if self.
             self.angular_vel = 0.55 * (beta/45)
